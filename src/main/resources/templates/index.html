@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Agenda Cultural - Eventos</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <div th:replace="~{fragments/header :: header}"></div>
+        
+        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <h2>📅 Eventos Culturais</h2>
+            <button class="btn-primary" onclick="abrirModalCriarEvento()" style="width: auto;">+ Criar Evento</button>
+        </div>
+        
+        <div id="events-grid" class="events-grid">
+            <div class="loading-container">
+                <div class="loading"></div> Carregando eventos...
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Criar Evento -->
+    <div id="modal-criar-evento" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Criar Novo Evento</h3>
+                <span class="modal-close" onclick="fecharModal('modal-criar-evento')">&times;</span>
+            </div>
+            <form id="form-criar-evento">
+                <div class="form-group">
+                    <label>Título:</label>
+                    <input type="text" id="evento-titulo" required>
+                </div>
+                <div class="form-group">
+                    <label>Descrição:</label>
+                    <textarea id="evento-descricao" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Local:</label>
+                    <input type="text" id="evento-local" required>
+                </div>
+                <div class="form-group">
+                    <label>Data e Hora:</label>
+                    <input type="datetime-local" id="evento-data" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoria:</label>
+                    <select id="evento-categoria">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Criar Evento</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Comentários -->
+    <div id="modal-comentarios" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💬 Comentários</h3>
+                <span class="modal-close" onclick="fecharModal('modal-comentarios')">&times;</span>
+            </div>
+            <div id="comentarios-lista" class="comment-list"></div>
+            <textarea id="novo-comentario" placeholder="Escreva seu comentário..." rows="3" style="width: 100%; margin-bottom: 10px;"></textarea>
+            <button class="btn-primary" onclick="adicionarComentario()">Comentar</button>
+        </div>
+    </div>
+    
+    <div id="message" class="message"></div>
+    
+    <script th:src="@{/js/app.js}"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+["^ ","~:members",["^ ","addFavorite",["~#set",[["^ ","~:flags",["^2",["~:method","~:public"]]]]],"removeFavorite",["^2",[["^ ","^3",["^2",["^4","^5"]]]]],"getFavoritesByUser",["^2",[["^ ","^3",["^2",["^4","^5"]]]]]]]

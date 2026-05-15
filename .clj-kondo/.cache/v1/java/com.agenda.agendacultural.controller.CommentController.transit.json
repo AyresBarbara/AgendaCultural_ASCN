@@ -1,0 +1,1 @@
+["^ ","~:members",["^ ","CommentController",["~#set",[["^ ","~:flags",["^2",["~:method","~:public"]]]]],"createComment",["^2",[["^ ","^3",["^2",["^4","^5"]]]]],"getCommentsByEventId",["^2",[["^ ","^3",["^2",["^4","^5"]]]]],"deleteComment",["^2",[["^ ","^3",["^2",["^4","^5"]]]]]]]

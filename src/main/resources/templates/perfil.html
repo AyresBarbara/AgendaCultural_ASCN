@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Meu Perfil - Agenda Cultural</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <div th:replace="~{fragments/header :: header}"></div>
+        
+        <div class="admin-section">
+            <h3>👤 Meus Dados</h3>
+            <div id="dados-usuario">
+                <div class="loading"></div> Carregando...
+            </div>
+        </div>
+        
+        <div class="admin-section">
+            <h3>❤️ Meus Eventos Favoritos</h3>
+            <div id="eventos-favoritos">
+                <div class="loading"></div> Carregando...
+            </div>
+        </div>
+        
+        <div class="admin-section">
+            <h3>📝 Eventos que Criei</h3>
+            <div id="eventos-criados">
+                <div class="loading"></div> Carregando...
+            </div>
+        </div>
+    </div>
+    
+    <div id="message" class="message"></div>
+    
+    <script th:src="@{/js/perfil.js}"></script>
+</body>
+</html>
