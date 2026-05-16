@@ -3,6 +3,19 @@ let token = localStorage.getItem("token");
 if (!token) {
     window.location.href = "/login";
 }
+// Pega o ID do usuário logado
+async function getUsuarioId() {
+    try {
+        const response = await fetch("/api/users/me", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const user = await response.json();
+        return user.idUser;
+    } catch (error) {
+        console.error("Erro ao buscar ID do usuário:", error);
+        return null;
+    }
+}
 
 function showMessage(msg, type = "success") {
     const msgDiv = document.getElementById("message");
@@ -81,6 +94,9 @@ async function carregarFavoritos() {
                             <span>📍 ${escapeHtml(evento.location || "Local não informado")}</span>
                             <span>📅 ${formatarData(evento.dateTime)}</span>
                         </div>
+                        <div class="event-actions">
+                            <button class="btn-unfavorite" onclick="desfavoritarPerfil('${fav.eventId}')">💔 Desfavoritar</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -89,6 +105,27 @@ async function carregarFavoritos() {
         document.getElementById("eventos-favoritos").innerHTML = html;
     } catch (error) {
         document.getElementById("eventos-favoritos").innerHTML = "<p style='color: red;'>Erro ao carregar favoritos</p>";
+    }
+}
+
+async function desfavoritarPerfil(eventoId) {
+    const userId = await getUsuarioId();
+    if (!userId) return;
+    
+    try {
+        const response = await fetch(`/api/favorites/user/${userId}/event/${eventoId}`, {
+            method: "DELETE",
+            headers: { "Authorization": "Bearer " + token }
+        });
+        
+        if (response.ok) {
+            showMessage("💔 Evento removido dos favoritos!");
+            carregarFavoritos(); // recarrega a lista
+        } else {
+            showMessage("❌ Erro ao desfavoritar", "error");
+        }
+    } catch (error) {
+        showMessage("❌ Erro: " + error.message, "error");
     }
 }
 
@@ -124,6 +161,9 @@ async function carregarEventosCriados() {
                             <span>📍 ${escapeHtml(evento.location || "Local não informado")}</span>
                             <span>📅 ${formatarData(evento.dateTime)}</span>
                         </div>
+                        <div class="event-actions">
+                            <button class="btn-delete" onclick="deletarEventoPerfil('${evento.idEvent}')">🗑️ Excluir</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -132,6 +172,26 @@ async function carregarEventosCriados() {
         document.getElementById("eventos-criados").innerHTML = html;
     } catch (error) {
         document.getElementById("eventos-criados").innerHTML = "<p style='color: red;'>Erro ao carregar eventos</p>";
+    }
+}
+
+async function deletarEventoPerfil(eventoId) {
+    if (!confirm("Tem certeza que deseja excluir este evento?")) return;
+    
+    try {
+        const response = await fetch(`/api/events/${eventoId}`, {
+            method: "DELETE",
+            headers: { "Authorization": "Bearer " + token }
+        });
+        
+        if (response.ok) {
+            showMessage("✅ Evento excluído com sucesso!");
+            carregarEventosCriados(); // recarrega a lista
+        } else {
+            showMessage("❌ Erro ao excluir evento", "error");
+        }
+    } catch (error) {
+        showMessage("❌ Erro: " + error.message, "error");
     }
 }
 

@@ -49,12 +49,38 @@ async function carregarEventos() {
         const eventos = await response.json();
         
         if (!eventos || eventos.length === 0) {
-            container.innerHTML = '<div class="loading-container">Nenhum evento encontrado. Seja o primeiro a criar um!</div>';
+            container.innerHTML = '<div class="loading-container">Nenhum evento encontrado.</div>';
             return;
+        }
+        
+        // Busca o ID do usuário logado
+        const userId = await getUsuarioId();
+        
+        // Busca os favoritos do usuário logado (se estiver logado)
+        let favoritosIds = [];
+        if (token && userId) {
+            try {
+                const favResponse = await fetch(`/api/favorites/user/${userId}`, {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const favoritos = await favResponse.json();
+                favoritosIds = favoritos.map(f => f.eventId);
+            } catch (e) {
+                console.log("Erro ao buscar favoritos:", e);
+            }
         }
         
         let html = "";
         eventos.forEach(evento => {
+            // Verifica se o evento está favoritado
+            const isFavoritado = favoritosIds.includes(evento.idEvent);
+            const textoBotaoFavorito = isFavoritado ? "💔 Desfavoritar" : "❤️ Favoritar";
+            
+            // Só mostra botão excluir se o usuário logado for o criador
+            const botoesExcluir = (userId && evento.createdById === userId) 
+                ? `<button class="btn-delete" onclick="deletarEvento('${evento.idEvent}')">🗑️ Excluir</button>` 
+                : '';
+            
             html += `
                 <div class="event-card">
                     <div class="event-header">
@@ -68,7 +94,8 @@ async function carregarEventos() {
                             <span>📅 ${formatarData(evento.dateTime)}</span>
                         </div>
                         <div class="event-actions">
-                            <button class="btn-favorite" onclick="favoritarEvento('${evento.idEvent}')">❤️ Favoritar</button>
+                            <button class="btn-favorite" onclick="favoritarEvento('${evento.idEvent}', this)">${textoBotaoFavorito}</button>
+                            ${botoesExcluir}
                             <button class="btn-comment" onclick="abrirComentarios('${evento.idEvent}')">💬 Comentar</button>
                         </div>
                     </div>
@@ -77,7 +104,50 @@ async function carregarEventos() {
         });
         container.innerHTML = html;
     } catch (error) {
+        console.error("Erro:", error);
         container.innerHTML = '<div class="loading-container" style="color: red;">Erro ao carregar eventos</div>';
+    }
+}
+
+async function alternarFavorito(eventoId, botao) {
+    if (!token) {
+        showMessage("Faça login para favoritar", "error");
+        return;
+    }
+    
+    const textoBotao = botao.textContent;
+    const isFavoritando = textoBotao.includes("Favoritar");
+    
+    const userId = await getUsuarioId();
+    if (!userId) return;
+    
+    const url = isFavoritando ? "/api/favorites" : `/api/favorites/user/${userId}/event/${eventoId}`;
+    const method = isFavoritando ? "POST" : "DELETE";
+    const body = isFavoritando ? JSON.stringify({ eventId: eventoId }) : null;
+    
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json"
+            },
+            body: body
+        });
+        
+        if (response.ok) {
+            if (isFavoritando) {
+                botao.textContent = "💔 Desfavoritar";
+                showMessage("❤️ Adicionado aos favoritos!");
+            } else {
+                botao.textContent = "❤️ Favoritar";
+                showMessage("💔 Removido dos favoritos!");
+            }
+        } else {
+            showMessage("❌ Erro ao " + (isFavoritando ? "favoritar" : "desfavoritar"), "error");
+        }
+    } catch (error) {
+        showMessage("❌ Erro: " + error.message, "error");
     }
 }
 
@@ -178,29 +248,86 @@ async function getUsuarioId() {
     }
 }
 
-async function favoritarEvento(eventoId) {
+async function favoritarEvento(eventoId, botao) {
     if (!token) {
         showMessage("Faça login para favoritar", "error");
         return;
     }
     
+    const textoBotao = botao.textContent;
+    const isFavoritando = textoBotao.includes("Favoritar");
+    const userId = await getUsuarioId();
+    
+    const url = isFavoritando ? "/api/favorites" : `/api/favorites/user/${userId}/event/${eventoId}`;
+    const method = isFavoritando ? "POST" : "DELETE";
+    const body = isFavoritando ? JSON.stringify({ eventId: eventoId }) : null;
+    
     try {
-        const response = await fetch("/api/favorites", {
-            method: "POST",
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 "Authorization": "Bearer " + token,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ 
-                eventId: eventoId
-            })
+            body: body
         });
         
         if (response.ok) {
-            showMessage("❤️ Evento adicionado aos favoritos!");
+            if (isFavoritando) {
+                botao.textContent = "💔 Desfavoritar";
+                showMessage("❤️ Adicionado aos favoritos!");
+            } else {
+                botao.textContent = "❤️ Favoritar";
+                showMessage("💔 Removido dos favoritos!");
+            }
         } else {
-            const error = await response.json();
-            showMessage("❌ " + (error.message || "Erro ao favoritar"), "error");
+            showMessage("❌ Erro", "error");
+        }
+    } catch (error) {
+        showMessage("❌ Erro: " + error.message, "error");
+    }
+}
+
+async function desfavoritarEvento(eventoId) {
+    if (!token) {
+        showMessage("Faça login para desfavoritar", "error");
+        return;
+    }
+    
+    const userId = await getUsuarioId();
+    if (!userId) return;
+    
+    try {
+        const response = await fetch(`/api/favorites/user/${userId}/event/${eventoId}`, {
+            method: "DELETE",
+            headers: { "Authorization": "Bearer " + token }
+        });
+        
+        if (response.ok) {
+            showMessage("💔 Evento removido dos favoritos!");
+            carregarEventos();
+        } else {
+            showMessage("❌ Erro ao desfavoritar", "error");
+        }
+    } catch (error) {
+        showMessage("❌ Erro: " + error.message, "error");
+    }
+}
+
+async function deletarEvento(eventoId) {
+    if (!confirm("Tem certeza que deseja excluir este evento?")) return;
+    
+    try {
+        const response = await fetch(`/api/events/${eventoId}`, {
+            method: "DELETE",
+            headers: { "Authorization": "Bearer " + token }
+        });
+        
+        if (response.ok) {
+            showMessage("✅ Evento excluído com sucesso!");
+            carregarEventos(); // recarrega a lista
+        } else {
+            showMessage("❌ Erro ao excluir evento", "error");
         }
     } catch (error) {
         showMessage("❌ Erro: " + error.message, "error");
@@ -263,7 +390,7 @@ async function adicionarComentario() {
     const comentario = {
         text: texto,
         eventId: eventoAtualId,
-        userId: userId   // <-- ADICIONADO (é isso que estava faltando!)
+        userId: userId   
     };
     
     try {
